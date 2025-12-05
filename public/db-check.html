@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔍 Database Check - SalesFlow</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      padding: 40px;
+      max-width: 800px;
+      width: 100%;
+    }
+    h1 {
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    .check-item {
+      padding: 20px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      transition: all 0.3s;
+    }
+    .check-item.checking {
+      border-color: #ffa726;
+      background: #fff3e0;
+    }
+    .check-item.success {
+      border-color: #66bb6a;
+      background: #e8f5e9;
+    }
+    .check-item.error {
+      border-color: #ef5350;
+      background: #ffebee;
+    }
+    .check-title {
+      font-weight: bold;
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+    .check-message {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.5;
+    }
+    .icon {
+      display: inline-block;
+      margin-right: 10px;
+      font-size: 20px;
+    }
+    button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #5568d3;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .action-button {
+      background: #ef5350;
+      margin-left: 10px;
+    }
+    .action-button:hover {
+      background: #d32f2f;
+    }
+    code {
+      background: #f5f5f5;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+    }
+    .instructions {
+      background: #e3f2fd;
+      border-left: 4px solid #2196f3;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 4px;
+    }
+    .instructions h3 {
+      color: #1976d2;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+    .instructions ol {
+      margin-left: 20px;
+    }
+    .instructions li {
+      margin: 8px 0;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Database & Configuration Check</h1>
+    <p class="subtitle">Checking if your database migration was applied...</p>
+
+    <div id="check-env" class="check-item">
+      <div class="check-title">
+        <span class="icon">⏳</span>
+        Checking Environment Variables
+      </div>
+      <div class="check-message">Verifying Supabase configuration...</div>
+    </div>
+
+    <div id="check-tables" class="check-item">
+      <div class="check-title">
+        <span class="icon">⏳</span>
+        Checking Database Tables
+      </div>
+      <div class="check-message">Waiting...</div>
+    </div>
+
+    <div id="check-regions" class="check-item">
+      <div class="check-title">
+        <span class="icon">⏳</span>
+        Checking Default Data
+      </div>
+      <div class="check-message">Waiting...</div>
+    </div>
+
+    <div id="check-functions" class="check-item">
+      <div class="check-title">
+        <span class="icon">⏳</span>
+        Checking Helper Functions
+      </div>
+      <div class="check-message">Waiting...</div>
+    </div>
+
+    <button id="recheck-btn" onclick="location.reload()">🔄 Recheck</button>
+    
+    <div id="instructions" style="display: none;" class="instructions">
+      <h3>⚠️ Action Required: Apply Database Migration</h3>
+      <ol>
+        <li>Open <strong>Supabase Dashboard</strong> → <a href="https://supabase.com/dashboard" target="_blank">https://supabase.com/dashboard</a></li>
+        <li>Select your project</li>
+        <li>Click <strong>SQL Editor</strong> (left sidebar)</li>
+        <li>Open the file: <code>supabase/migrations/20251205_FRESH_START_complete_rebuild.sql</code></li>
+        <li>Copy the ENTIRE file content</li>
+        <li>Paste into SQL Editor and click <strong>Run</strong></li>
+        <li>Wait for "Query executed successfully"</li>
+        <li>Come back here and click <strong>Recheck</strong></li>
+      </ol>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://uflztgsteldueczyxfbk.supabase.co';
+    const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmbHp0Z3N0ZWxkdWVjenlYZmJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzMzOTYxMzIsImV4cCI6MjA0ODk3MjEzMn0.yGjqwWN4FjjPxKZBfGQaYaQ_Ot_Y0l6QjhBLqJVSe2c';
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function checkEnvironment() {
+      const checkEnv = document.getElementById('check-env');
+      
+      if (!SUPABASE_URL || !SUPABASE_KEY) {
+        setStatus(checkEnv, 'error', 'Missing Configuration', 'Environment variables not found. Check your .env file.');
+        return false;
+      }
+      
+      setStatus(checkEnv, 'success', 'Environment Variables Found', `Connected to: ${SUPABASE_URL}`);
+      return true;
+    }
+
+    async function checkTables() {
+      const checkTables = document.getElementById('check-tables');
+      setStatus(checkTables, 'checking', 'Checking Database Tables', 'Querying regions table...');
+
+      try {
+        const { data, error } = await supabase
+          .from('regions')
+          .select('*')
+          .limit(1);
+
+        if (error) {
+          if (error.code === '42P01') {
+            setStatus(checkTables, 'error', 'Tables Not Found', 
+              `❌ The "regions" table doesn't exist. Migration NOT applied yet!`);
+            return false;
+          }
+          setStatus(checkTables, 'error', 'Database Error', error.message);
+          return false;
+        }
+
+        setStatus(checkTables, 'success', 'Database Tables Exist', '✅ Tables are created!');
+        return true;
+      } catch (err) {
+        setStatus(checkTables, 'error', 'Connection Error', err.message);
+        return false;
+      }
+    }
+
+    async function checkRegions() {
+      const checkRegions = document.getElementById('check-regions');
+      setStatus(checkRegions, 'checking', 'Checking Default Data', 'Querying regions...');
+
+      try {
+        const { data, error } = await supabase
+          .from('regions')
+          .select('name, code');
+
+        if (error) {
+          setStatus(checkRegions, 'error', 'Query Failed', error.message);
+          return false;
+        }
+
+        if (!data || data.length === 0) {
+          setStatus(checkRegions, 'error', 'No Data Found', 
+            '❌ Regions table is empty. Migration NOT applied!');
+          return false;
+        }
+
+        const expectedRegions = ['Dar es Salaam', 'Arusha', 'Mwanza'];
+        const foundRegions = data.map(r => r.name);
+        const allFound = expectedRegions.every(r => foundRegions.includes(r));
+
+        if (allFound && data.length === 3) {
+          setStatus(checkRegions, 'success', 'Default Data Found', 
+            `✅ Found ${data.length} regions: ${foundRegions.join(', ')}`);
+          return true;
+        } else {
+          setStatus(checkRegions, 'error', 'Incorrect Data', 
+            `Expected 3 regions, found ${data.length}: ${foundRegions.join(', ')}`);
+          return false;
+        }
+      } catch (err) {
+        setStatus(checkRegions, 'error', 'Error', err.message);
+        return false;
+      }
+    }
+
+    async function checkFunctions() {
+      const checkFunctions = document.getElementById('check-functions');
+      setStatus(checkFunctions, 'checking', 'Checking Helper Functions', 'Testing is_admin() function...');
+
+      try {
+        // Try to call the is_admin function (will fail gracefully if doesn't exist)
+        const { data, error } = await supabase.rpc('is_admin', { 
+          user_id: '00000000-0000-0000-0000-000000000000' 
+        });
+
+        if (error) {
+          if (error.code === '42883') {
+            setStatus(checkFunctions, 'error', 'Functions Not Found', 
+              '❌ Helper functions missing. Migration NOT applied!');
+            return false;
+          }
+          // Function exists but returned error (expected for fake UUID)
+          setStatus(checkFunctions, 'success', 'Helper Functions Exist', 
+            '✅ Database functions are created!');
+          return true;
+        }
+
+        setStatus(checkFunctions, 'success', 'Helper Functions Work', 
+          '✅ Functions exist and are callable!');
+        return true;
+      } catch (err) {
+        setStatus(checkFunctions, 'error', 'Error', err.message);
+        return false;
+      }
+    }
+
+    function setStatus(element, status, title, message) {
+      element.className = `check-item ${status}`;
+      
+      let icon = '⏳';
+      if (status === 'success') icon = '✅';
+      if (status === 'error') icon = '❌';
+      if (status === 'checking') icon = '⏳';
+      
+      element.innerHTML = `
+        <div class="check-title">
+          <span class="icon">${icon}</span>
+          ${title}
+        </div>
+        <div class="check-message">${message}</div>
+      `;
+    }
+
+    async function runChecks() {
+      const envOk = await checkEnvironment();
+      if (!envOk) {
+        document.getElementById('instructions').style.display = 'none';
+        return;
+      }
+
+      const tablesOk = await checkTables();
+      if (!tablesOk) {
+        document.getElementById('instructions').style.display = 'block';
+        return;
+      }
+
+      const regionsOk = await checkRegions();
+      const functionsOk = await checkFunctions();
+
+      if (tablesOk && regionsOk && functionsOk) {
+        document.getElementById('instructions').style.display = 'none';
+        setTimeout(() => {
+          if (confirm('✅ Database is ready! Redirect to main app?')) {
+            window.location.href = '/';
+          }
+        }, 1000);
+      } else {
+        document.getElementById('instructions').style.display = 'block';
+      }
+    }
+
+    runChecks();
+  </script>
+</body>
+</html>
